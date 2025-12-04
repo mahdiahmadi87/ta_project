@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Teacher Assistant{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-primary text-white p-5 rounded mb-4">
+            <h1 class="display-4">Welcome to Teacher Assistant</h1>
+            <p class="lead">An interactive educational platform where you can learn by drawing and get AI-powered feedback.</p>
+            <hr class="my-4 bg-white">
+            <p>Join groups, explore topics, and complete interactive drawing exercises to enhance your learning experience.</p>
+        </div>
+    </div>
+</div>
+
+{% if groups_data %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Your Groups & Topics</h2>
+        
+        {% for group_data in groups_data %}
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-users me-2"></i>{{ group_data.group.name }}
+                </h4>
+                {% if group_data.group.description %}
+                <p class="mb-0 mt-2 opacity-75">{{ group_data.group.description }}</p>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if group_data.topics %}
+                <div class="row">
+                    {% for topic_data in group_data.topics %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card h-100 topic-card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <a href="{% url 'topic_detail' topic_data.topic.id %}" class="text-decoration-none">
+                                        {{ topic_data.topic.title }}
+                                    </a>
+                                </h5>
+                                <p class="card-text text-muted">{{ topic_data.topic.description|truncatewords:20 }}</p>
+                                
+                                <div class="progress mb-2" style="height: 8px;">
+                                    {% if topic_data.progress.completed %}
+                                    <div class="progress-bar bg-success" style="width: 100%"></div>
+                                    {% elif topic_data.progress.total_attempts > 0 %}
+                                    <div class="progress-bar bg-warning" style="width: 50%"></div>
+                                    {% else %}
+                                    <div class="progress-bar bg-info" style="width: 10%"></div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        {% if topic_data.progress.completed %}
+                                        <i class="fas fa-check-circle text-success me-1"></i>Completed
+                                        {% elif topic_data.progress.total_attempts > 0 %}
+                                        <i class="fas fa-clock text-warning me-1"></i>In Progress
+                                        {% else %}
+                                        <i class="fas fa-play-circle text-info me-1"></i>Not Started
+                                        {% endif %}
+                                    </small>
+                                    
+                                    {% if topic_data.progress.total_attempts > 0 %}
+                                    <small class="text-muted">
+                                        {{ topic_data.progress.total_attempts }} attempt{{ topic_data.progress.total_attempts|pluralize }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if topic_data.progress.final_score %}
+                                <div class="mt-2">
+                                    <span class="badge bg-success">Score: {{ topic_data.progress.final_score }}/20</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No topics available in this group yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-4x text-muted mb-4"></i>
+            <h3 class="text-muted">No Groups Assigned</h3>
+            <p class="text-muted">You haven't been assigned to any groups yet. Contact your administrator to get started.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.jumbotron {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+}
+
+.topic-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: 1px solid #dee2e6;
+}
+
+.topic-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.topic-card .card-title a {
+    color: #495057;
+    font-weight: 600;
+}
+
+.topic-card .card-title a:hover {
+    color: #007bff;
+}
+</style>
+{% endblock %}

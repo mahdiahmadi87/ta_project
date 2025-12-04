@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Topic - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Admin Dashboard</a></li>
+                <li class="breadcrumb-item active">Create Topic</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-book me-2"></i>Create New Topic
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-robot me-2"></i>
+                    <strong>AI Content Generation:</strong> When you create this topic, AI will automatically generate:
+                    <ul class="mb-0 mt-2">
+                        <li>Background image for the interactive canvas</li>
+                        <li>Instructional text to guide students</li>
+                    </ul>
+                </div>
+                
+                <form method="post" id="topicForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="group" class="form-label">Group *</label>
+                        <select class="form-select" id="group" name="group" required>
+                            <option value="">Select a group...</option>
+                            {% for group in groups %}
+                            <option value="{{ group.id }}">{{ group.name }} ({{ group.members.count }} members)</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Choose which group this topic belongs to.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Topic Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                        <div class="form-text">Enter a clear, descriptive title for the topic.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description *</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                        <div class="form-text">Provide a brief description of what students will learn.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="prompt" class="form-label">AI Generation Prompt *</label>
+                        <textarea class="form-control" id="prompt" name="prompt" rows="5" required placeholder="Example: Create a physics diagram showing forces on an inclined plane. Include a block on a 30-degree ramp with gravity, normal force, and friction vectors. Students should be able to draw and label these forces correctly."></textarea>
+                        <div class="form-text">
+                            <strong>Important:</strong> This prompt will be used to generate both the background image and instructional text. 
+                            Be specific about:
+                            <ul class="mb-0 mt-1">
+                                <li>What should be shown in the diagram/image</li>
+                                <li>What students need to draw or interact with</li>
+                                <li>Any specific colors, directions, or elements</li>
+                                <li>The educational objective</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-lightbulb me-1"></i>Prompt Examples:
+                            </h6>
+                            <div class="accordion" id="promptExamples">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#physics-example">
+                                            Physics - Forces and Motion
+                                        </button>
+                                    </h2>
+                                    <div id="physics-example" class="accordion-collapse collapse" data-bs-parent="#promptExamples">
+                                        <div class="accordion-body">
+                                            <code>Create a physics diagram showing a block sliding down an inclined plane at 30 degrees. Show the block, the ramp, and indicate where students should draw: 1) gravitational force (red arrow pointing down), 2) normal force (blue arrow perpendicular to surface), 3) friction force (green arrow opposing motion). Students will need to draw these force vectors with correct directions and relative magnitudes.</code>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#chemistry-example">
+                                            Chemistry - Molecular Structure
+                                        </button>
+                                    </h2>
+                                    <div id="chemistry-example" class="accordion-collapse collapse" data-bs-parent="#promptExamples">
+                                        <div class="accordion-body">
+                                            <code>Create a molecular diagram template for water (H2O). Show oxygen atom in the center with spaces for students to draw hydrogen atoms and electron pairs. Students should draw: 1) two hydrogen atoms (small circles), 2) two lone pairs of electrons (dots), 3) covalent bonds (lines). Include angle measurements and polarity indicators.</code>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#math-example">
+                                            Mathematics - Geometry
+                                        </button>
+                                    </h2>
+                                    <div id="math-example" class="accordion-collapse collapse" data-bs-parent="#promptExamples">
+                                        <div class="accordion-body">
+                                            <code>Create a coordinate plane with a triangle ABC where A(2,3), B(6,3), C(4,7). Students need to: 1) draw and label the triangle vertices, 2) calculate and draw the centroid (red dot), 3) draw the three medians (dashed lines), 4) label all measurements. Include grid lines and axis labels.</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-info" id="submitBtn">
+                            <i class="fas fa-magic me-1"></i>Create Topic & Generate AI Content
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5>Generating AI Content...</h5>
+                <p class="text-muted mb-0">This may take a few moments. Please don't close this page.</p>
+                <div class="progress mt-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('topicForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    
+    form.addEventListener('submit', function(e) {
+        // Show loading modal
+        loadingModal.show();
+        
+        // Disable submit button
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
+    });
+    
+    // Example prompt insertion
+    document.querySelectorAll('.accordion-body code').forEach(code => {
+        code.style.cursor = 'pointer';
+        code.title = 'Click to use this example';
+        code.addEventListener('click', function() {
+            document.getElementById('prompt').value = this.textContent;
+            // Close all accordions
+            document.querySelectorAll('.accordion-collapse').forEach(collapse => {
+                bootstrap.Collapse.getInstance(collapse)?.hide();
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

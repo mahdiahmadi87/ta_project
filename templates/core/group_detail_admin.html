@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ group.name }} - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Admin Dashboard</a></li>
+                <li class="breadcrumb-item active">{{ group.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>{{ group.name }}</h1>
+                {% if group.description %}
+                <p class="text-muted">{{ group.description }}</p>
+                {% endif %}
+            </div>
+            <div class="text-end">
+                <small class="text-muted">
+                    Created by {{ group.created_by.username }} on {{ group.created_at|date:"M d, Y" }}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                <h5>Members</h5>
+                <h3 class="text-primary">{{ group.members.count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-book fa-2x text-success mb-2"></i>
+                <h5>Topics</h5>
+                <h3 class="text-success">{{ group.topics.count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-info mb-2"></i>
+                <h5>Completed</h5>
+                <h3 class="text-info">{{ completed_count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                <h5>In Progress</h5>
+                <h3 class="text-warning">{{ in_progress_count }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Detailed Progress Report
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if progress_data %}
+                {% for member_data in progress_data %}
+                <div class="member-section mb-4">
+                    <h5 class="border-bottom pb-2">
+                        <i class="fas fa-user me-2"></i>{{ member_data.user.get_full_name|default:member_data.user.username }}
+                        <small class="text-muted">({{ member_data.user.username }})</small>
+                    </h5>
+                    
+                    {% if member_data.topics %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Topic</th>
+                                    <th>Status</th>
+                                    <th>Attempts</th>
+                                    <th>Final Score</th>
+                                    <th>Total Time</th>
+                                    <th>Attempt History</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for topic_data in member_data.topics %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ topic_data.topic.title }}</strong>
+                                        <br><small class="text-muted">{{ topic_data.topic.description|truncatewords:8 }}</small>
+                                    </td>
+                                    <td>
+                                        {% if topic_data.progress %}
+                                            {% if topic_data.progress.completed %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i>Completed
+                                            </span>
+                                            {% elif topic_data.progress.total_attempts > 0 %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock me-1"></i>In Progress
+                                            </span>
+                                            {% else %}
+                                            <span class="badge bg-secondary">
+                                                <i class="fas fa-minus me-1"></i>Not Started
+                                            </span>
+                                            {% endif %}
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-minus me-1"></i>Not Started
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if topic_data.progress %}
+                                        <span class="badge bg-info">{{ topic_data.progress.total_attempts }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if topic_data.progress.final_score %}
+                                        <span class="badge bg-success">{{ topic_data.progress.final_score }}/20</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if topic_data.progress.total_time_spent %}
+                                        {% with total_time=topic_data.progress.total_time_spent %}
+                                        {{ total_time|floatformat:0 }}s
+                                        {% endwith %}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if topic_data.attempts %}
+                                        <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#attempts-{{ member_data.user.id }}-{{ topic_data.topic.id }}">
+                                            <i class="fas fa-history me-1"></i>View History
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted">No attempts</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if topic_data.attempts %}
+                                <tr class="collapse" id="attempts-{{ member_data.user.id }}-{{ topic_data.topic.id }}">
+                                    <td colspan="6">
+                                        <div class="bg-light p-3 rounded">
+                                            <h6>Attempt History:</h6>
+                                            <div class="row">
+                                                {% for attempt in topic_data.attempts %}
+                                                <div class="col-md-4 mb-2">
+                                                    <div class="card card-sm">
+                                                        <div class="card-body p-2">
+                                                            <div class="d-flex justify-content-between">
+                                                                <strong>Attempt {{ attempt.attempt_number }}</strong>
+                                                                {% if attempt.is_correct %}
+                                                                <i class="fas fa-check text-success"></i>
+                                                                {% else %}
+                                                                <i class="fas fa-times text-danger"></i>
+                                                                {% endif %}
+                                                            </div>
+                                                            <small class="text-muted">
+                                                                Score: {{ attempt.score|default:"N/A" }}/20<br>
+                                                                Time: {{ attempt.time_spent }}s<br>
+                                                                {{ attempt.submitted_at|date:"M d, H:i" }}
+                                                            </small>
+                                                            {% if attempt.feedback %}
+                                                            <div class="mt-1">
+                                                                <small class="text-info">{{ attempt.feedback|truncatewords:10 }}</small>
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>No topics assigned to this group yet.
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Members in Group</h5>
+                    <p class="text-muted">Add members to this group to see their progress.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.member-section {
+    border-left: 4px solid #007bff;
+    padding-left: 15px;
+}
+
+.card-sm .card-body {
+    font-size: 0.875rem;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.collapse {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}
