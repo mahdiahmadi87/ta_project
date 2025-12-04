@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ topic.title }} - Workspace</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #333; color: white; margin: 0; padding: 20px; }
+        h1 { margin-bottom: 10px; }
+        
+        #canvas-container { position: relative; border: 2px solid #555; background: white; cursor: crosshair; }
+        
+        .toolbar { margin-top: 10px; display: flex; gap: 10px; background: #444; padding: 10px; border-radius: 5px; }
+        button { cursor: pointer; padding: 8px 12px; border: none; border-radius: 3px; font-weight: bold; }
+        .color-btn { width: 30px; height: 30px; border: 2px solid #fff; }
+        
+        .instructions { margin-top: 20px; background: #222; padding: 20px; max-width: 800px; border-radius: 5px; border-left: 5px solid #007bff; }
+        .instructions h3 { margin-top: 0; color: #007bff; }
+    </style>
+</head>
+<body>
+
+    <h1>{{ topic.title }}</h1>
+
+    <div id="canvas-container">
+        <canvas id="drawingCanvas" width="800" height="600"></canvas>
+    </div>
+
+    <div class="toolbar">
+        <!-- Colors -->
+        <button class="color-btn" style="background: black;" onclick="setColor('black')"></button>
+        <button class="color-btn" style="background: red;" onclick="setColor('red')"></button>
+        <button class="color-btn" style="background: blue;" onclick="setColor('blue')"></button>
+        <button class="color-btn" style="background: green;" onclick="setColor('green')"></button>
+        
+        <!-- Tools -->
+        <button onclick="setEraser()">Eraser</button>
+        <button onclick="addText()">Add Text</button>
+        <button onclick="clearCanvas()">Clear All</button>
+    </div>
+
+    <div class="instructions">
+        <h3>AI Instructions</h3>
+        <p>{{ topic.generated_instruction }}</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Load AI Generated Background
+        const bgImage = new Image();
+        bgImage.src = "{{ topic.generated_background.url }}";
+        bgImage.onload = function() {
+            ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+        };
+
+        // State
+        let painting = false;
+        let brushColor = 'black';
+        let lineWidth = 3;
+        let isEraser = false;
+
+        // Mouse Event Listeners
+        canvas.addEventListener('mousedown', startPosition);
+        canvas.addEventListener('mouseup', finishedPosition);
+        canvas.addEventListener('mousemove', draw);
+
+        function startPosition(e) {
+            painting = true;
+            draw(e);
+        }
+
+        function finishedPosition() {
+            painting = false;
+            ctx.beginPath(); // Reset path to prevent connecting lines
+        }
+
+        function draw(e) {
+            if (!painting) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.lineWidth = isEraser ? 20 : lineWidth;
+            ctx.lineCap = 'round';
+
+            if (isEraser) {
+                // To "erase" on top of an image, we actually can't just make it transparent 
+                // easily without layers. A simple approach is drawing the background image 
+                // clipping or just painting white if the requirement allows.
+                // However, standard "Eraser" usually means clearing pixels.
+                // Since we have a background image, "globalCompositeOperation = destination-out" 
+                // will reveal the canvas CSS background (white).
+                // If we want to reveal the AI image underneath, we can't really "erase" drawing 
+                // without a secondary canvas layer.
+                // SIMPLIFICATION: We will paint with White (assuming white canvas) or 
+                // utilize globalCompositeOperation if we treat the drawing as a layer.
+                
+                // Let's assume standard white-out eraser for simplicity
+                ctx.strokeStyle = 'white'; 
+            } else {
+                ctx.strokeStyle = brushColor;
+            }
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        // Tool Functions
+        function setColor(color) {
+            isEraser = false;
+            brushColor = color;
+        }
+
+        function setEraser() {
+            isEraser = true;
+        }
+
+        function addText() {
+            const text = prompt("Enter text to add:");
+            if (text) {
+                ctx.font = "20px Arial";
+                ctx.fillStyle = brushColor;
+                ctx.fillText(text, 50, 50); // Places text at fixed pos, user can drag in V2
+            }
+        }
+
+        function clearCanvas() {
+            // Clear
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Redraw Background
+            ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+        }
+    </script>
+</body>
+</html>
