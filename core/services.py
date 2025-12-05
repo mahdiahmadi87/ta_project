@@ -23,15 +23,31 @@ class AIService:
                 'Authorization': f'Bearer {settings.IMAGE_GENERATION_API_KEY}',
                 'Content-Type': 'application/json'
             }
-            
+
+            # payload = {
+            #     'model': settings.IMAGE_MODEL,
+            #     'prompt': prompt,
+            #     'n': 1,
+            #     'size': '1024x1024',
+            #     'quality': 'standard'
+            # }
             payload = {
                 'model': settings.IMAGE_MODEL,
-                'prompt': prompt,
-                'n': 1,
-                'size': '1024x1024',
-                'quality': 'standard'
+                'messages': [
+                    {
+                        'role': 'user',
+                        'content': prompt
+                    }
+                ],
+                "modalities": ["image", "text"],
+                "image_config": {
+                    "aspect_ratio": "1:1"
+                }
             }
-            
+
+
+
+
             # Log the request
             log_entry = AIGenerationLog.objects.create(
                 generation_type='image',
@@ -39,24 +55,42 @@ class AIService:
                 topic=topic,
                 attempt=attempt
             )
-            
+
             response = requests.post(settings.IMAGE_API_URL, headers=headers, json=payload)
-            
+
             if response.status_code == 200:
-                data = response.json()
-                image_url = data['data'][0]['url']
-                
-                # Download the image
-                img_response = requests.get(image_url)
-                if img_response.status_code == 200:
-                    # Update log
-                    log_entry.success = True
-                    log_entry.response = json.dumps(data)
-                    log_entry.save()
-                    
-                    return img_response.content
-                else:
-                    raise Exception(f"Failed to download image: {img_response.status_code}")
+                result = response.json()
+                if result.get("choices"):
+                    message = result["choices"][0]["message"]
+                    if message.get("images"):
+                        for image in message["images"]:
+                            image_url = image["image_url"]["url"]
+                            print(f"Generated image: {image_url[:50]}...")
+                            if image_url.startswith("data:image"):
+                                # داده base64 رو جدا کن
+                                base64_data = image_url.split(",", 1)[1]
+                                image_bytes = base64.b64decode(base64_data)
+
+                                # Update log
+                                log_entry.success = True
+                                log_entry.response = json.dumps(result)  # قبلاً اشتباه JSON می‌ذاشتی
+                                log_entry.save()
+
+                                return image_bytes
+
+                            else:
+                                # حالت URL عادی
+                                img_response = requests.get(image_url)
+                                if img_response.status_code == 200:
+                                    log_entry.success = True
+                                    log_entry.response = json.dumps(result)
+                                    log_entry.save()
+
+                                    return img_response.content
+                                else:
+                                    raise Exception(f"Failed to download image: {img_response.status_code}")
+
+
             else:
                 error_msg = f"Image generation failed: {response.status_code} - {response.text}"
                 log_entry.error_message = error_msg
